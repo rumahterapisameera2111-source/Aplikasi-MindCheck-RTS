@@ -97,12 +97,21 @@ export default function App() {
     localStorage.setItem('mindcheck_history', JSON.stringify(newHistory));
   };
 
-  const categories = ['Semua', ...Array.from(new Set(tests.map(t => t.category)))];
+  const categories = ['Semua', 'Tes Berbayar', ...Array.from(new Set(tests.map(t => t.category)))];
 
   const filteredTests = tests.filter(test => {
     const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          test.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'Semua' || test.category === selectedCategory;
+    
+    let matchesCategory = false;
+    if (selectedCategory === 'Semua') {
+      matchesCategory = true;
+    } else if (selectedCategory === 'Tes Berbayar') {
+      matchesCategory = !!test.isPaid;
+    } else {
+      matchesCategory = test.category === selectedCategory;
+    }
+    
     return matchesSearch && matchesCategory;
   });
 
@@ -922,6 +931,34 @@ export default function App() {
                   )}
                 </div>
 
+                {/* Top 3 Weaknesses (Specific for IKP-12 or tests with showWeaknesses) */}
+                {selectedTest.showWeaknesses && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                      <ShieldAlert className="w-5 h-5 text-rose-600 dark:text-rose-400" /> Top 3 Area Perbaikan
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Berdasarkan jawaban Anda, berikut adalah 3 poin yang paling perlu Anda perhatikan dan tingkatkan:</p>
+                    <div className="space-y-3">
+                      {answers
+                        .map((score, index) => ({ score, question: selectedTest.questions[index].text }))
+                        .sort((a, b) => a.score - b.score)
+                        .slice(0, 3)
+                        .map((item, idx) => (
+                          <div key={idx} className="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-800/50 p-4 rounded-2xl">
+                            <div className="flex items-start gap-3">
+                              <div className="bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-400 w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+                                !
+                              </div>
+                              <p className="text-sm text-rose-900 dark:text-rose-300 font-medium leading-relaxed">
+                                {item.question}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Mini Education */}
                 <div className="mb-8">
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Memahami Kondisi Anda</h3>
@@ -934,7 +971,7 @@ export default function App() {
                 <div className="mb-10">
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Langkah Awal yang Bisa Dicoba</h3>
                   <div className="space-y-3">
-                    {selectedTest.actionableSteps.map((step, idx) => (
+                    {(resultRule.actionableSteps || selectedTest.actionableSteps).map((step, idx) => (
                       <div key={idx} className="flex items-start gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3.5 rounded-xl shadow-sm">
                         <div className="bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-400 w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
                           {idx + 1}
